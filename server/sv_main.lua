@@ -1,22 +1,32 @@
 RegisterServerEvent('z00thorses:getHorse')
 AddEventHandler('z00thorses:getHorse', function()
 local _source = source
+print"check 1"
 	TriggerEvent('redemrp:getPlayerFromId', _source, function(user)
 		local identifier = user.getIdentifier()
 		local charid = user.getSessionVar("charid")
-			--print(identifier)
+			print("identifier",identifier,charid)
 			
-		MySQL.Async.fetchAll('SELECT * FROM stables WHERE `identifier`=@identifier AND `charid`=@charid AND `type`=@horses AND `default`=1;', {identifier = identifier, charid = charid, horses = 'horse'}, function(horses)
 		
+	MySQL.Async.fetchAll('SELECT * FROM `stables` WHERE `identifier`=@id AND `charid`=@characterid;',{
+		['@characterid'] = charid,	
+		['@id'] = identifier,
+	},
+		function(horses)
+
+
 		if horses[1] ~= nil then
+		print"check 3"
 			print("Horse:", horses[1].id, "Name: ", horses[1].name)
 			local name = horses[1].name
 			local id = horses[1].id
 			if horses[1].stabled then
 				horse = horses[1].vehicles
 			else
+			print"check 4"
 				horse = 0
 			end
+			print("spawnhorse",horse, name, id)
 			TriggerClientEvent("z00thorses:spawnHorse", _source, horse, name, id)
 		end
 		end)
