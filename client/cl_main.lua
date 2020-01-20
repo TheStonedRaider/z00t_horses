@@ -8,7 +8,6 @@ RegisterCommand('spawnhorse', function(source, args, rawCommand)
 end)
 
 RegisterCommand('flee', function(source, args, rawCommand)
-
 	fleeHorse()
     
 end)
@@ -19,46 +18,13 @@ RegisterCommand('dh', function(source, args, rawCommand)
     
 end)
 
-RegisterCommand('behorse', function(source, args, rawCommand)
-
-	RequestModel(-1963397600)
-    
-	Citizen.CreateThread(function()
-        local waiting = 0
-        while not HasModelLoaded(-1963397600) do
-            waiting = waiting + 100
-            Citizen.Wait(100)
-            if waiting > 5000 then
-                print("Could not load ped")
-                break
-            end
-        end
-            SetPlayerModel(playerPed, -1963397600)
-			Citizen.InvokeNative(0x283978A15512B2FE, playerPed)
-			
-			SetModelAsNoLongerNeeded(-1963397600)
-    end)
-    
-end)
-
 RegisterCommand('reghorse', function(source, args, rawCommand)
 	local isMounted = IsPedOnMount(playerPed)
-	local isOwned = IsEntityAMissionEntity(GetMount(playerPed))
-	print(isOwned)
-	if args[1] ~= nil and isMounted then
-		if not isOwned then
-			newVeh('horse', args[1])
-		else
-			TriggerEvent("redemrp_notification:start", "Horse is owned by someone!" , 3, "error")
-		end
+	if args[1] ~=nil and isMounted then
+		newVeh('horse', args[1])
 	elseif isMounted then
-		if not isOwned then
-			newVeh('horse')
-		else
-			TriggerEvent("redemrp_notification:start", "Horse is owned by someone!" , 3, "error")
-		end
+		newVeh('horse')
 	else
-		TriggerEvent("redemrp_notification:start", "You must be mounted on a horse!" , 3, "warning")
 		print('Not mounted!')
 	end
     
@@ -77,68 +43,110 @@ AddEventHandler('z00thorses:spawnHorse', function(horseData, horseName, id)
   myHorse[3] = horseName
   print("Model: ", myHorse[1], " DB ID: ", myHorse[2])
   if myHorse[1] ~= 0 then
-	local x,y,z = table.unpack(GetOffsetFromEntityInWorldCoords(playerPed, 0.0, -40.0, 0.0))
-	local gChk, groundZ = nil, nil
-	
-	for height = 1, 1000 do
-            gChk, groundZ = GetGroundZAndNormalFor_3dCoord(x, y, height+0.0)
-				if gChk then
-					print('FOUND GROUND!: ' .. groundZ)
-					break
-				end
+	local x,y,z = table.unpack(GetOffsetFromEntityInWorldCoords(playerPed, 0.0, -40.0, 0.3))
+	local a,b = GetGroundZAndNormalFor_3dCoord(x, y, z)
+print"wtf 1"
 
-            --[[local foundGround, zPos = GetGroundZFor_3dCoord(waypointCoords["x"], waypointCoords["y"], height + 0.0)
-
-            if foundGround then
-                SetPedCoordsKeepVehicle(PlayerPedId(), waypointCoords["x"], waypointCoords["y"], height + 0.0)
-
-                break
-            end
-
-            Citizen.Wait(5)--]]
-    end
-
-	RequestModel(myHorse[1])
     
 	Citizen.CreateThread(function()
         local waiting = 0
-        while not HasModelLoaded(myHorse[1]) do
-            waiting = waiting + 100
+		print"wtf 3"
+        while not HasModelLoaded(tonumber(horseData)) do
+			RequestModel(tonumber(horseData),true)
+            waiting = waiting + 1
             Citizen.Wait(100)
+			print"wtf 2"
             if waiting > 5000 then
                 print("Could not load ped")
                 break
             end
         end
-            myHorse[4] = CreatePed(myHorse[1], x, y, groundZ+2, GetEntityHeading(playerPed), 1, 0)
+		print"wtf 4"
+		cds = GetOffsetFromEntityInWorldCoords(playerPed,0.0,2.0,0.0)
+            myHorse[4] = CreatePed(tonumber(horseData),cds.x,cds.y,cds.z,GetEntityHeading(playerPed)-180, 1, 1)
 			Citizen.InvokeNative(0x6A071245EB0D1882, myHorse[4], playerPed, -1, 7.2, 2.0, 0, 0)
-			Citizen.InvokeNative(0x283978A15512B2FE, myHorse[4], true)
-			--Citizen.InvokeNative(0x58A850EAEE20FAA3, myHorse[4])
-			Citizen.InvokeNative(0x23f74c2fda6e7c61, -1230993421, myHorse[4])
+			--Citizen.InvokeNative(0x283978A15512B2FE, myHorse[4], true) -- blip function keeps failing 
+			Citizen.InvokeNative(0x58A850EAEE20FAA3, myHorse[4])
+				SetPedOutfitPreset(myHorse[4],12,0)
+			
 			SetPedNameDebug(myHorse[4], myHorse[3])
 			SetPedPromptName(myHorse[4], myHorse[3])
-			
+			Citizen.InvokeNative( 0x9FF1E042FA597187, myHorse[4], 200, true )
 			SetModelAsNoLongerNeeded(myHorse[4])
+			Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(),0x67AF7302,true,true,true) --stirups
+			Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(),0x20359E53,true,true,true)
+
+			
     end)
   end
 end)
 
 function checkHorse(source, args, rawCommand)
+print"check1 "
 	local isMounted = IsPedOnMount(playerPed)
 	playerPed = PlayerPedId() --Updating when needed?
 	if myHorse[4] ~= 0 then
 		if not isMounted then
+		print"check2 "
 			Citizen.InvokeNative(0x6A071245EB0D1882, myHorse[4], playerPed, -1, 7.2, 2.0, 0, 0)
 		end
 	else
+	print"check3 "
 		TriggerServerEvent("z00thorses:getHorse")
 	end
 end
 
+function Runaway()
+print"runf"
+Citizen.CreateThread(function()
+	hash = GetHashKey("p_wrappedmeat01x")
+		while not HasModelLoaded(hash) do
+		Citizen.Wait(1000)
+		if not HasModelLoaded(hash) then
+		        Citizen.InvokeNative(0xFA28FE3A6246FC30,tonumber(hash),true)
+				end
+
+			
+		end
+ran = math.random(1,4)
+if ran == 1 then
+ran = -100.0
+else
+ran = 100.0
+end
+cds = GetOffsetFromEntityInWorldCoords(playerPed,0.0,ran,0.0)
+
+ent = CreateObject(hash,cds, false, false, false) 
+	Wait(200)
+Citizen.InvokeNative(0x6A071245EB0D1882, myHorse[4], ent, -1, 7.2, 2.0, 0, 0)
+
+	Wait(15000)
+	SetEntityAsMissionEntity(myHorse[4],true,true)
+	DeleteEntity(ent)
+	print"del horse"
+		DeletePed(myHorse[4])
+		DeleteEntity(myHorse[4])
+		DeleteObject(myHorse[4])
+
+
+
+
+
+end)
+end
+
+local interiorsActive = false
+
+
+
 function fleeHorse(source, args, rawCommand)
 
 	if myHorse[4] ~= 0 then
+Runaway()	
+Wait(15000)
 		DeletePed(myHorse[4])
+		DeleteEntity(myHorse[4])
+		DeleteObject(myHorse[4])
 		TriggerServerEvent("z00thorses:stableHorse", myHorse[2])
 		myHorse[4] = 0
 	end
@@ -151,8 +159,8 @@ function newVeh(vehType, id)
 	local inPut1 = ""
 	local inPut2 = ""
 	Citizen.CreateThread(function()
-		AddTextEntry("FMMC_MPM_TYP8", "Name your horse:")
-		DisplayOnscreenKeyboard(1, "FMMC_MPM_TYP8", "", "Name", "", "", "", 30)
+		AddTextEntry('FMMC_MPM_NA', "Name your horse:")
+		DisplayOnscreenKeyboard(1, "FMMC_MPM_NA", "", "Name", "", "", "", 30)
 		while (UpdateOnscreenKeyboard() == 0) do
 			DisableAllControlActions(0);
 			Citizen.Wait(0);
@@ -160,24 +168,12 @@ function newVeh(vehType, id)
 		if (GetOnscreenKeyboardResult()) then
 			inPut1 = GetOnscreenKeyboardResult()
 			print('Horse Hash?', currentHorse, inPut1)
-			TriggerServerEvent('z00thorses:newVehicle', currentHorse, vehType, inPut1, id)
+	TriggerServerEvent('z00thorses:newVehicle', currentHorse, vehType, inPut1, id)
 		end
 	
 	end)
+
 end
-
-RegisterNetEvent('z00thorses:delMount')
-AddEventHandler('z00thorses:delMount', function()
-	
-	local currentHorse = IsEntityAMissionEntity(GetMount(playerPed))
-	print(currentHorse)
-	if not currentHorse then
-		local horsePed = GetEntityModel(GetMount(playerPed))
-		DeletePed(horsePed)
-	end
-
-end)
-	
 
 function delHorse(source, args, rawCommand)
 
@@ -197,16 +193,18 @@ end
 
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(1)
+		
+        Citizen.Wait(0)
         --DisableControlAction(0,0x24978A28,true)
-        if Citizen.InvokeNative(0x91AEF906BCA88877, 0, 0x24978A28) then -- Control =  H
+        if IsControlJustPressed(0, 0x24978A28) then -- Control =  H
 			checkHorse()
-			Citizen.Wait(10000) --Flood Protection?
+			Citizen.Wait(2000) --Flood Protection?
         end
 		
 		if Citizen.InvokeNative(0x91AEF906BCA88877, 0, 0x4216AF06) then -- Control = Horse Flee
 			local horseCheck = Citizen.InvokeNative(0x7912F7FC4F6264B6, playerPed, myHorse[4])
 			if horseCheck then
+			
 				fleeHorse()
 			end
 		end			
